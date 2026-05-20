@@ -8,6 +8,9 @@ const providerRules = [
     { key: "linkedin", label: "LinkedIn", mark: "in", hosts: ["linkedin.com", "www.linkedin.com"] }
 ];
 
+const metadataEndpoint = "https://api.microlink.io/";
+const avatarEndpoint = "https://unavatar.io";
+
 const initialPanels = [
     {
         url: "https://www.instagram.com/aoiyuzu_pivoine25/",
@@ -115,6 +118,7 @@ function createPanelFromData(data) {
         id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
         provider,
         updatedAt: "06:54",
+        fetchStatus: data.fetchStatus || "未取得",
         ...data
     };
 }
@@ -175,14 +179,17 @@ function renderPanel(panel) {
 
 function renderReadyStage(panel) {
     const tiles = panel.tiles.map((tile) => `
-        <div class="feed-tile ${tile.video ? "video" : ""}" style="--tile-bg: ${tile.bg}">
+        <div class="feed-tile ${tile.video ? "video" : ""}" style="${tileStyle(tile)}">
             <span>${escapeHtml(tile.text)}</span>
         </div>
     `).join("");
+    const avatarStyle = panel.avatarUrl
+        ? `--avatar-bg: ${panel.avatarBg}; --ring: ${panel.ring}; background-image: url('${escapeAttribute(panel.avatarUrl)}');`
+        : `--avatar-bg: ${panel.avatarBg}; --ring: ${panel.ring};`;
     return `
         <div class="panel-stage">
             <section class="profile-zone">
-                <div class="avatar" style="--avatar-bg: ${panel.avatarBg}; --ring: ${panel.ring};">${escapeHtml(panel.avatar)}</div>
+                <div class="avatar ${panel.avatarUrl ? "has-image" : ""}" style="${avatarStyle}">${panel.avatarUrl ? "" : escapeHtml(panel.avatar)}</div>
                 <div class="profile-copy">
                     <strong>${escapeHtml(panel.handle)}</strong>
                     <p>${escapeHtml(panel.name)}</p>
@@ -194,6 +201,12 @@ function renderReadyStage(panel) {
             <section class="feed-strip">${tiles}</section>
         </div>
     `;
+}
+
+function tileStyle(tile) {
+    const color = `--tile-bg: ${tile.bg || "#d9d9d9"};`;
+    if (!tile.image) return color;
+    return `${color} background-image: url('${escapeAttribute(tile.image)}');`;
 }
 
 function renderMetricsRow(panel) {
@@ -282,27 +295,139 @@ function addUrls() {
 function refreshPanel(id) {
     panels = panels.map((panel) => {
         if (panel.id !== id) return panel;
-        if (panel.status === "ready") return { ...panel, updatedAt: "06:55" };
         return {
             ...panel,
-            status: "ready",
-            updatedAt: "06:55",
-            name: panel.name || "公開プロフィール",
-            followers: panel.followers || "フォロワー取得不可",
-            posts: panel.posts || "投稿取得中",
-            latestPost: "06:55",
-            fetchStatus: "取得完了",
-            avatar: panel.avatar || panel.handle.slice(0, 1).toUpperCase(),
-            avatarBg: panel.avatarBg || "#f4f4f4",
-            ring: panel.ring || "#ff2ea6",
-            tiles: panel.tiles.length ? panel.tiles : [
-                { text: "プロフィール", bg: "#efefef" },
-                { text: "投稿プレビュー", bg: "#e8e1d6" },
-                { text: "取得制限", bg: "#d9d9d9" }
-            ]
+            fetchStatus: "取得中",
+            latestPost: "取得中",
+            status: "loading"
         };
     });
     renderPanels();
+    hydratePanel(id, true);
+}
+
+async function hydratePanels() {
+    await Promise.allSettled(panels.map((panel) => hydratePanel(panel.id, false)));
+}
+
+async function hydratePanel(id, force) {
+    const panel = panels.find((item) => item.id === id);
+    if (!panel) return;
+    if (!force && panel.fetchedOnce) return;
+
+    updatePanel(id, {
+        fetchStatus: "公開情報取得中",
+        latestPost: "取得中",
+        status: "loading"
+    });
+
+    try {
+        const publicData = await fetchPublicPreview(panel);
+        updatePanel(id, {
+            ...publicData,
+            status: "ready",
+            fetchStatus: publicData.fetchStatus || "一部取得",
+            latestPost: publicData.latestPost || new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+            updatedAt: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+            fetchedOnce: true
+        });
+    } catch (error) {
+        updatePanel(id, {
+            status: "ready",
+            fetchStatus: "取得不可",
+            latestPost: "取得不可",
+            updatedAt: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+            fetchedOnce: true,
+            avatar: panel.avatar || panel.handle.slice(0, 1).toUpperCase(),
+            avatarUrl: panel.provider.key === "instagram" ? `${avatarEndpoint}/instagram/${encodeURIComponent(panel.handle)}` : "",
+            tiles: buildFallbackTiles(panel, "公開ページのメタ情報を取得できませんでした")
+        });
+    }
+}
+
+async function fetchPublicPreview(panel) {
+    const apiUrl = `${metadataEndpoint}?url=${encodeURIComponent(panel.url)}&screenshot=true&meta=false`;
+    const response = await fetch(apiUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`metadata ${response.status}`);
+    const payload = await response.json();
+    const data = payload.data || {};
+    const description = data.description || "";
+    const title = data.title || "";
+    const metrics = parseMetrics(`${title} ${description}`);
+    const screenshot = data.screenshot && data.screenshot.url ? data.screenshot.url : "";
+    const image = data.image && data.image.url ? data.image.url : "";
+    const logo = data.logo && data.logo.url ? data.logo.url : "";
+    const avatarUrl = logo || image || (panel.provider.key === "instagram" ? `${avatarEndpoint}/instagram/${encodeURIComponent(panel.handle)}` : "");
+    const name = cleanTitle(title, panel) || panel.name || "公開プロフィール";
+    const hasMetrics = Boolean(metrics.followers || metrics.posts);
+
+    return {
+        name,
+        avatar: panel.avatar || panel.handle.slice(0, 1).toUpperCase(),
+        avatarUrl,
+        avatarBg: panel.avatarBg || "#f5f5f5",
+        ring: panel.ring || "#ff2ea6",
+        followers: metrics.followers || panel.followers || "取得不可",
+        posts: metrics.posts || panel.posts || "取得不可",
+        latestPost: hasMetrics ? "公開メタ取得" : "投稿情報なし",
+        fetchStatus: hasMetrics || image || screenshot ? "一部取得" : "メタ取得のみ",
+        tiles: buildFetchedTiles(panel, { screenshot, image, description, title })
+    };
+}
+
+function parseMetrics(text) {
+    const normalized = text.replace(/\s+/g, " ");
+    const followersMatch = normalized.match(/([\d,.]+[KMB万億]?)\s*(?:Followers|followers|フォロワー)/);
+    const postsMatch = normalized.match(/([\d,.]+[KMB万億]?)\s*(?:Posts|posts|投稿)/);
+    return {
+        followers: followersMatch ? `フォロワー${followersMatch[1]}` : "",
+        posts: postsMatch ? `投稿${postsMatch[1]}` : ""
+    };
+}
+
+function cleanTitle(title, panel) {
+    if (!title) return "";
+    return title
+        .replace(/\(@[^)]+\).*$/, "")
+        .replace(/• Instagram.*$/i, "")
+        .replace(/- Instagram.*$/i, "")
+        .replace(panel.handle, "")
+        .trim();
+}
+
+function buildFetchedTiles(panel, data) {
+    const tiles = [];
+    if (data.screenshot) {
+        tiles.push({ text: "ページプレビュー", bg: "#e9eef2", image: data.screenshot });
+    }
+    if (data.image && data.image !== data.screenshot) {
+        tiles.push({ text: "公開画像", bg: "#efe7da", image: data.image });
+    }
+    tiles.push({
+        text: data.description ? truncateText(data.description, 34) : "公開メタ情報",
+        bg: "#dcecdf"
+    });
+    while (tiles.length < 3) {
+        tiles.push({ text: panel.provider.label, bg: "#e8e8e8" });
+    }
+    return tiles.slice(0, 3);
+}
+
+function buildFallbackTiles(panel, reason) {
+    return [
+        { text: "プロフィールURL", bg: "#eceff1" },
+        { text: reason, bg: "#efe7da" },
+        { text: panel.url, bg: "#dcecdf" }
+    ];
+}
+
+function updatePanel(id, patch) {
+    panels = panels.map((panel) => panel.id === id ? { ...panel, ...patch } : panel);
+    renderPanels();
+}
+
+function truncateText(value, maxLength) {
+    return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
 }
 
 function exportCsv() {
@@ -335,6 +460,13 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function escapeAttribute(value) {
+    return String(value)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/\n/g, "");
 }
 
 document.getElementById("openAddPanel").addEventListener("click", openDialog);
@@ -370,3 +502,4 @@ document.addEventListener("click", (event) => {
 });
 
 renderPanels();
+hydratePanels();
