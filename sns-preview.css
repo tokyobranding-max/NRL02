@@ -248,7 +248,7 @@ button {
 .panel-stage {
     position: relative;
     display: grid;
-    grid-template-rows: 118px 1fr;
+    grid-template-rows: 104px 46px 1fr;
     background: #fff;
 }
 
@@ -257,13 +257,13 @@ button {
     grid-template-columns: 86px 1fr auto;
     gap: 14px;
     align-items: center;
-    padding: 21px 18px 16px;
+    padding: 16px 18px 10px;
     color: #0d0d0d;
 }
 
 .avatar {
-    width: 72px;
-    height: 72px;
+    width: 68px;
+    height: 68px;
     border: 3px solid #fff;
     border-radius: 50%;
     outline: 3px solid var(--ring, #ff3aa8);
@@ -303,6 +303,43 @@ button {
     line-height: 1.5;
 }
 
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    border-top: 1px solid #e7e7e7;
+    border-bottom: 1px solid #dfdfdf;
+    background: #dedede;
+}
+
+.metrics-row div {
+    display: grid;
+    align-content: center;
+    min-width: 0;
+    padding: 6px 8px;
+    background: #f8f8f8;
+}
+
+.metrics-row span {
+    display: block;
+    color: #777;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.metrics-row strong {
+    display: block;
+    overflow: hidden;
+    margin-top: 3px;
+    color: #141414;
+    font-size: 11px;
+    font-weight: 950;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .provider-corner {
     align-self: start;
     color: var(--instagram);
@@ -319,9 +356,87 @@ button {
 .feed-tile {
     position: relative;
     overflow: hidden;
-    min-height: 127px;
+    min-height: 100px;
     border-right: 1px solid #fff;
     background: var(--tile-bg, #d9d9d9);
+}
+
+.compare-panel {
+    margin-top: 14px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #101010;
+}
+
+.compare-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    background: #151515;
+}
+
+.compare-head p {
+    margin: 0;
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.compare-head h2 {
+    margin: 3px 0 0;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.compare-head button {
+    min-height: 28px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    color: #d8d8d8;
+    background: #111;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.compare-table-wrap {
+    overflow-x: auto;
+}
+
+.compare-table {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+}
+
+.compare-table th,
+.compare-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid #222;
+    color: #d9d9d9;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.compare-table th {
+    color: #777;
+    background: #0b0b0b;
+    font-size: 10px;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.compare-table td:last-child {
+    max-width: 280px;
+    overflow: hidden;
+    color: #8a8a8a;
+    text-overflow: ellipsis;
 }
 
 .feed-tile:last-child {
@@ -605,5 +720,9 @@ button {
     .sns-panel,
     .add-panel {
         height: 330px;
+    }
+
+    .metrics-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
