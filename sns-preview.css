@@ -274,6 +274,12 @@ button {
     box-shadow: 0 2px 9px rgba(0, 0, 0, 0.18);
     font-size: 22px;
     font-weight: 1000;
+    background-position: center;
+    background-size: cover;
+}
+
+.avatar.has-image {
+    color: transparent;
 }
 
 .profile-copy {
@@ -359,6 +365,8 @@ button {
     min-height: 100px;
     border-right: 1px solid #fff;
     background: var(--tile-bg, #d9d9d9);
+    background-position: center;
+    background-size: cover;
 }
 
 .compare-panel {
@@ -462,6 +470,19 @@ button {
     font-weight: 900;
     line-height: 1.35;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+.feed-tile[style*="background-image"] span {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: max-content;
+    max-width: calc(100% - 16px);
+    padding: 4px 7px;
+    border-radius: 4px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.58);
+    text-shadow: none;
 }
 
 .feed-tile.video::after {
