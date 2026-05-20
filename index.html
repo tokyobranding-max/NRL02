@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SideView SNS Preview</title>
-    <link rel="stylesheet" href="../sns-preview.css">
+    <link rel="stylesheet" href="sns-preview.css">
 </head>
 <body>
     <header class="topbar">
@@ -19,6 +19,8 @@
         <div class="topbar-spacer"></div>
         <button class="ghost-action" type="button">🔗 シェア</button>
         <button class="ghost-action" type="button">💾 保存</button>
+        <button id="toggleCompare" class="ghost-action" type="button">比較表</button>
+        <button id="exportCsv" class="ghost-action" type="button">CSV出力</button>
         <button id="openAddPanel" class="add-action" type="button">＋ 追加</button>
     </header>
 
@@ -32,6 +34,32 @@
         </section>
 
         <section id="panelGrid" class="panel-grid" aria-label="SNSプレビュー一覧"></section>
+
+        <section id="comparePanel" class="compare-panel" aria-label="SNS比較表" hidden>
+            <div class="compare-head">
+                <div>
+                    <p>Comparison</p>
+                    <h2>アカウント比較表</h2>
+                </div>
+                <button id="closeCompare" type="button">閉じる</button>
+            </div>
+            <div class="compare-table-wrap">
+                <table class="compare-table">
+                    <thead>
+                        <tr>
+                            <th>SNS</th>
+                            <th>アカウント</th>
+                            <th>フォロワー数</th>
+                            <th>投稿数</th>
+                            <th>最新投稿</th>
+                            <th>取得状態</th>
+                            <th>URL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compareRows"></tbody>
+                </table>
+            </div>
+        </section>
     </main>
 
     <dialog id="addDialog" class="add-dialog" aria-labelledby="addDialogTitle">
@@ -59,6 +87,6 @@
         </form>
     </dialog>
 
-    <script src="../sns-preview.js"></script>
+    <script src="sns-preview.js"></script>
 </body>
 </html>
