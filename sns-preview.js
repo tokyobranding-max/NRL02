@@ -15,6 +15,8 @@ const initialPanels = [
         name: "Paris Lien -輪-",
         followers: "フォロワー118人",
         posts: "投稿14件",
+        latestPost: "06:54",
+        fetchStatus: "取得完了",
         status: "ready",
         avatar: "輪",
         avatarBg: "#e8f4ff",
@@ -31,6 +33,8 @@ const initialPanels = [
         name: "",
         followers: "",
         posts: "",
+        latestPost: "取得中",
+        fetchStatus: "取得中",
         status: "loading",
         avatar: "",
         tiles: []
@@ -41,6 +45,8 @@ const initialPanels = [
         name: "宇陀で挑む。",
         followers: "フォロワー112人",
         posts: "投稿14件",
+        latestPost: "06:54",
+        fetchStatus: "取得完了",
         status: "ready",
         avatar: "宇",
         avatarBg: "#f2f7df",
@@ -57,6 +63,8 @@ const initialPanels = [
         name: "",
         followers: "",
         posts: "",
+        latestPost: "取得中",
+        fetchStatus: "取得中",
         status: "loading",
         avatar: "",
         tiles: []
@@ -67,6 +75,8 @@ const initialPanels = [
         name: "",
         followers: "",
         posts: "",
+        latestPost: "取得中",
+        fetchStatus: "取得中",
         status: "loading",
         avatar: "",
         tiles: []
@@ -120,6 +130,8 @@ function createPanelFromUrl(rawUrl) {
         name: fallbackName,
         followers: provider.key === "instagram" ? "" : "公開情報を取得中",
         posts: provider.key === "instagram" ? "" : "取得待ち",
+        latestPost: provider.key === "instagram" ? "取得中" : "未取得",
+        fetchStatus: provider.key === "instagram" ? "取得中" : "一部取得",
         status: provider.key === "instagram" ? "loading" : "ready",
         avatar: handle.slice(0, 1).toUpperCase(),
         avatarBg: "#f1f1f1",
@@ -136,6 +148,7 @@ function renderPanels() {
     const grid = document.getElementById("panelGrid");
     grid.innerHTML = panels.map(renderPanel).join("") + renderAddPanel();
     renderSummary();
+    renderCompareTable();
 }
 
 function renderPanel(panel) {
@@ -177,8 +190,20 @@ function renderReadyStage(panel) {
                 </div>
                 <div class="provider-corner">◎</div>
             </section>
+            ${renderMetricsRow(panel)}
             <section class="feed-strip">${tiles}</section>
         </div>
+    `;
+}
+
+function renderMetricsRow(panel) {
+    return `
+        <section class="metrics-row" aria-label="${escapeHtml(panel.handle)}の指標">
+            <div><span>フォロワー数</span><strong>${escapeHtml(panel.followers || "取得不可")}</strong></div>
+            <div><span>投稿数</span><strong>${escapeHtml(panel.posts || "取得不可")}</strong></div>
+            <div><span>最新投稿</span><strong>${escapeHtml(panel.latestPost || panel.updatedAt)}</strong></div>
+            <div><span>取得状態</span><strong>${escapeHtml(panel.fetchStatus || panel.status)}</strong></div>
+        </section>
     `;
 }
 
@@ -215,6 +240,22 @@ function renderSummary() {
     `;
 }
 
+function renderCompareTable() {
+    const rows = document.getElementById("compareRows");
+    if (!rows) return;
+    rows.innerHTML = panels.map((panel) => `
+        <tr>
+            <td>${escapeHtml(panel.provider.label)}</td>
+            <td>${escapeHtml(panel.handle)}</td>
+            <td>${escapeHtml(panel.followers || "取得不可")}</td>
+            <td>${escapeHtml(panel.posts || "取得不可")}</td>
+            <td>${escapeHtml(panel.latestPost || panel.updatedAt)}</td>
+            <td>${escapeHtml(panel.fetchStatus || panel.status)}</td>
+            <td>${escapeHtml(panel.url)}</td>
+        </tr>
+    `).join("");
+}
+
 function openDialog() {
     const dialog = document.getElementById("addDialog");
     if (typeof dialog.showModal === "function") {
@@ -249,6 +290,8 @@ function refreshPanel(id) {
             name: panel.name || "公開プロフィール",
             followers: panel.followers || "フォロワー取得不可",
             posts: panel.posts || "投稿取得中",
+            latestPost: "06:55",
+            fetchStatus: "取得完了",
             avatar: panel.avatar || panel.handle.slice(0, 1).toUpperCase(),
             avatarBg: panel.avatarBg || "#f4f4f4",
             ring: panel.ring || "#ff2ea6",
@@ -262,6 +305,29 @@ function refreshPanel(id) {
     renderPanels();
 }
 
+function exportCsv() {
+    const header = ["SNS", "アカウント", "URL", "フォロワー数", "投稿数", "最新投稿", "取得状態"];
+    const body = panels.map((panel) => [
+        panel.provider.label,
+        panel.handle,
+        panel.url,
+        panel.followers || "取得不可",
+        panel.posts || "取得不可",
+        panel.latestPost || panel.updatedAt,
+        panel.fetchStatus || panel.status
+    ]);
+    const csv = [header, ...body]
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sideview-sns-preview.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
 function escapeHtml(value) {
     return String(value)
         .replace(/&/g, "&amp;")
@@ -273,6 +339,14 @@ function escapeHtml(value) {
 
 document.getElementById("openAddPanel").addEventListener("click", openDialog);
 document.getElementById("addUrls").addEventListener("click", addUrls);
+document.getElementById("exportCsv").addEventListener("click", exportCsv);
+document.getElementById("toggleCompare").addEventListener("click", () => {
+    document.getElementById("comparePanel").hidden = false;
+    document.getElementById("comparePanel").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+document.getElementById("closeCompare").addEventListener("click", () => {
+    document.getElementById("comparePanel").hidden = true;
+});
 document.getElementById("clearUrls").addEventListener("click", () => {
     document.getElementById("urlInput").value = "";
     document.getElementById("inputNotice").textContent = "入力をクリアしました。";
