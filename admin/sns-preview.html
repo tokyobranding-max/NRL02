@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SideView SNS Preview</title>
+    <link rel="stylesheet" href="../sns-preview.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand-lockup" aria-label="SideView">
+            <span class="brand-side">Side</span><span class="brand-view">View</span>
+        </div>
+        <button class="mission-select" type="button" aria-label="ミッション選択">
+            <span>📁</span>
+            <strong id="missionName">ミッション4</strong>
+            <span class="chevron">▾</span>
+        </button>
+        <div class="topbar-spacer"></div>
+        <button class="ghost-action" type="button">🔗 シェア</button>
+        <button class="ghost-action" type="button">💾 保存</button>
+        <button id="toggleCompare" class="ghost-action" type="button">比較表</button>
+        <button id="exportCsv" class="ghost-action" type="button">CSV出力</button>
+        <button id="openAddPanel" class="add-action" type="button">＋ 追加</button>
+    </header>
+
+    <main class="app-shell">
+        <section class="mission-head">
+            <div>
+                <h1>SNSアカウント一覧</h1>
+                <p>公開アカウントをログインなしで並べて確認します。</p>
+            </div>
+            <div id="statusSummary" class="status-summary" aria-label="取得状況"></div>
+        </section>
+
+        <section id="panelGrid" class="panel-grid" aria-label="SNSプレビュー一覧"></section>
+
+        <section id="comparePanel" class="compare-panel" aria-label="SNS比較表" hidden>
+            <div class="compare-head">
+                <div>
+                    <p>Comparison</p>
+                    <h2>アカウント比較表</h2>
+                </div>
+                <button id="closeCompare" type="button">閉じる</button>
+            </div>
+            <div class="compare-table-wrap">
+                <table class="compare-table">
+                    <thead>
+                        <tr>
+                            <th>SNS</th>
+                            <th>アカウント</th>
+                            <th>フォロワー数</th>
+                            <th>投稿数</th>
+                            <th>最新投稿</th>
+                            <th>取得状態</th>
+                            <th>URL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compareRows"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="addDialog" class="add-dialog" aria-labelledby="addDialogTitle">
+        <form method="dialog">
+            <div class="dialog-head">
+                <div>
+                    <p>URL Input</p>
+                    <h2 id="addDialogTitle">SNSパネルを追加</h2>
+                </div>
+                <button class="icon-button" value="cancel" type="submit" aria-label="閉じる">×</button>
+            </div>
+            <label>
+                <span>SNSアカウントURL</span>
+                <textarea id="urlInput" placeholder="https://www.instagram.com/account/&#10;https://x.com/account"></textarea>
+            </label>
+            <label>
+                <span>ミッション名</span>
+                <input id="missionInput" value="ミッション4">
+            </label>
+            <div id="inputNotice" class="dialog-notice">Instagram / X / TikTok / YouTube / Facebook / Threads / LinkedIn に対応。</div>
+            <div class="dialog-actions">
+                <button id="addUrls" class="dialog-primary" value="default" type="button">パネルを追加</button>
+                <button id="clearUrls" class="dialog-secondary" value="default" type="button">クリア</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="../sns-preview.js"></script>
+</body>
+</html>
